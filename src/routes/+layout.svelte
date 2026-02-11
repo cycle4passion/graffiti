@@ -1,6 +1,20 @@
-<script lang="ts">
-  import { page } from "$app/state";
+<script module lang="ts">
   declare const __APP_VERSION__: string;
+
+  declare global {
+    interface Document {
+      startViewTransition(
+        callbackOptions?: ViewTransitionUpdateCallback | StartViewTransitionOptions
+      ): ViewTransition;
+    }
+  }
+
+  export {};
+</script>
+
+<script lang="ts">
+  import { onNavigate } from "$app/navigation";
+  import { page } from "$app/state";
   const version = __APP_VERSION__;
   import "$lib/drop-in.css";
   import type { FontSettings, ThemeValues } from "$lib/types";
@@ -27,13 +41,21 @@
   });
 
   $effect(() => {
-    const temp_root = document.documentElement;
-    for (var key in theme_values) {
-      temp_root.style.setProperty(
-        `--${key.replace("_", "-")}`,
-        theme_values[key],
-      );
+    const style = document.documentElement.style;
+    for (const key in theme_values) {
+      const value = theme_values[key as keyof ThemeValues];
+      style.setProperty(`--${key.replace("_", "-")}`, value);
     }
+  });
+
+  onNavigate((navigation) => {
+	if (!document.startViewTransition) return;
+	return new Promise((resolve) => {
+		document.startViewTransition(async () => {
+			resolve();
+			await navigation.complete;
+		});
+	});
   });
 </script>
 
@@ -252,7 +274,7 @@
         <strong>More</strong>
         <a href="https://syntax.fm">Syntax Podcast</a>
         <a href="https://youtube.com/@syntaxfm">Syntax on YouTube</a>
-        <a href="https://youtube.com/@stolinski">Scott on YouTube</a>
+        <a href="https://youtube.com/@scotttolinski">Scott on YouTube</a>
       </nav>
     </div>
     <hr />
